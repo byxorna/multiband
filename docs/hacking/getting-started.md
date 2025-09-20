@@ -1,6 +1,10 @@
 # Getting started
 
-´´´shell
-git clone ...
+## Native
 
-´´´
+    make
+    ./bin/multiband version
+
+## Containerized
+
+    make container

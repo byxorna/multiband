@@ -8,7 +8,7 @@ Currently, its an experiment in creating a secure and resilient communications p
 
 # How can I get started experimenting?
 
-See [getting-started](docs/guide/getting-started.md)
+See [getting-started](docs/recipe/getting-started.md)
 
 # Where can I learn more about the architecture?
 
