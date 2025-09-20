@@ -1,5 +1,5 @@
 BINARY := multiband
-MODULE := github.com/byxorna/multiband
+MODULE := codeberg.org/splitringresonator/multiband
 BUILDER := podman
 
 COMMIT = $(shell git rev-parse HEAD)

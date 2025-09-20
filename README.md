@@ -2,6 +2,8 @@
 
 Experimental communications platform
 
+https://codeberg.org/splitringresonator/multiband
+
 # What is this?
 
 Currently, its an experiment in creating a secure and resilient communications platform using common, low cost hardware like Raspberry Pis, LoRA radios running RNode and Meshtastic firmwares, and embedded devices running OpenWRT.

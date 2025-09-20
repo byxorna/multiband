@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/byxorna/multiband/cmd"
+import "codeberg.org/splitringresonator/multiband/cmd"
 
 func main() {
 	cmd.Execute(docs)
