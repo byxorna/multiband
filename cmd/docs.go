@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/charmbracelet/glow/ui"
+	"github.com/charmbracelet/glow/v2/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -28,12 +28,10 @@ var docsCmd = &cobra.Command{
 		fmt.Printf("TODO: this command only views local files at %s currently; FIXME to display embedded docs\n", localDocsPath)
 
 		if _, err := ui.NewProgram(ui.Config{
-
-			WorkingDirectory: localDocsPath,
-			DocumentTypes:    ui.NewDocTypeSet(),
-			ShowAllFiles:     false,
-			EnableMouse:      true,
-		}).Run(); err != nil {
+			Path:         localDocsPath,
+			ShowAllFiles: false,
+			EnableMouse:  true,
+		}, "").Run(); err != nil {
 			return err
 		}
 
