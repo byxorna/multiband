@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"codeberg.org/splitringresonator/multiband/docs"
-	docs_cli "codeberg.org/splitringresonator/multiband/pkg/cli/docs"
+	docs_cli "codeberg.org/splitringresonator/multiband/internal/cli/docs"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"

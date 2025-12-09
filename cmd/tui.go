@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"codeberg.org/splitringresonator/multiband/pkg/cli/tui"
+	"codeberg.org/splitringresonator/multiband/internal/cli/tui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )

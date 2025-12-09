@@ -4,7 +4,7 @@ BUILDER := podman
 
 COMMIT = $(shell git rev-parse HEAD)
 BUILD = $(shell git describe --tags --always --dirty=\*)
-LDFLAGS := -ldflags="-X=${MODULE}/pkg/version.Build=${BUILD} -X=${MODULE}/pkg/version.Commit=${COMMIT}"
+LDFLAGS := -ldflags="-X=${MODULE}/internal/version.Build=${BUILD} -X=${MODULE}/internal/version.Commit=${COMMIT}"
 GO_BUILD_ARGS := ${LDFLAGS} -buildvcs=true
 
 
@@ -19,6 +19,7 @@ help:
 .PHONY: bin
 bin:
 	go build ${GO_BUILD_ARGS} -o bin/${BINARY} ${MODULE}
+	# ./bin/${BINARY} -h
 
 .PHONY: container
 container:

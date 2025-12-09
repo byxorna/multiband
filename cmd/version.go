@@ -20,7 +20,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"codeberg.org/splitringresonator/multiband/pkg/version"
+	"codeberg.org/splitringresonator/multiband/internal/version"
 	"github.com/spf13/cobra"
 )
 
