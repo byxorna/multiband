@@ -53,12 +53,10 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 }
 
 type Model struct {
-	list         list.Model
-	filter       string // list filter
-	listFiltered list.Model
-	choice       string
-	quitting     bool
-	width        uint
+	list     list.Model
+	choice   string
+	quitting bool
+	width    uint
 
 	viewport viewport.Model
 }
@@ -138,14 +136,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch keypress := msg.String(); keypress {
-		case "/":
-			m.list.SetShowFilter(true)
 
 		case "esc":
-			m.choice = ""
-			m.filter = ""
-
-			m.list.SetShowFilter(false)
+			if m.choice != "" {
+				m.choice = ""
+			}
 
 		case "ctrl+f":
 			m.viewport.HalfPageDown()
@@ -158,28 +153,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, tea.Quit)
 
 		case "enter":
-			//if !m.list.ShowFilter() {
-			i, ok := m.list.SelectedItem().(item)
-			if ok {
+			if i, ok := m.list.SelectedItem().(item); ok {
 				m.choice = string(i)
 			}
 
 			m.viewport.SetContent(m.renderContent())
-			//}
 
 		default:
-			if m.list.ShowFilter() {
-				m.filter += strings.ToLower(msg.String())
-				m.list.SetFilterText(m.filter)
-			}
+			//if m.list.ShowFilter() {
+			//	m.filter += strings.ToLower(msg.String())
+			//	m.list.SetFilterText(m.filter)
+			//}
 
 		}
 	}
 
-	if m.choice == "" {
-		m.list, cmd = m.list.Update(msg)
-		cmds = append(cmds, cmd)
-	} else {
+	m.list, cmd = m.list.Update(msg)
+	cmds = append(cmds, cmd)
+	if m.choice != "" {
 		m.viewport, cmd = m.viewport.Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -231,7 +222,7 @@ func NewModel(width uint) Model {
 	// TODO: can we fzf through contents from this view?
 
 	l := list.New(items, itemDelegate{}, int(width), listHeight)
-	l.Title = "Documentation browser"
+	l.Title = "Embedded Documentation Browser"
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
