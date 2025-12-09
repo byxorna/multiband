@@ -36,5 +36,6 @@ func Execute(docsFS embed.FS) {
 
 func init() {
 	rootCmd.AddCommand(docsCmd)
+	rootCmd.AddCommand(tuiCmd)
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

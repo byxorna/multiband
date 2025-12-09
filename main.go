@@ -15,8 +15,11 @@ limitations under the License.
 */
 package main
 
-import "codeberg.org/splitringresonator/multiband/cmd"
+import (
+	"codeberg.org/splitringresonator/multiband/cmd"
+	"codeberg.org/splitringresonator/multiband/docs"
+)
 
 func main() {
-	cmd.Execute(docs)
+	cmd.Execute(docs.Docs)
 }
