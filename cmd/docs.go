@@ -43,23 +43,25 @@ var docsCmd = &cobra.Command{
 			return err
 		}
 
-		var width uint
+		var width, height uint
 		isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
 		if isTerminal {
-			w, _, err := term.GetSize(int(os.Stdout.Fd()))
+			w, h, err := term.GetSize(int(os.Stdout.Fd()))
 			if err == nil {
-				width = uint(w) //nolint:gosec
+				width = uint(w)  //nolint:gosec
+				height = uint(h) //nolint:gosec
 			}
 
-			if width > 120 {
-				width = 120
-			}
+			//if width > 120 {
+			//	width = 120
+			//}
 		}
-		if width == 0 {
-			width = 80
-		}
+		//if width == 0 {
+		//	width = 80
+		//}
 
-		p := tea.NewProgram(docs_cli.NewModel(width))
+		height = 0 // TODO: debug why using reported term height makes pager layout hard to manage with header
+		p := tea.NewProgram(docs_cli.NewModel(width, height))
 
 		if _, err := p.Run(); err != nil {
 			return err

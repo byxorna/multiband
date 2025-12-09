@@ -14,12 +14,28 @@ import (
 )
 
 var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+	titleStyle = lipgloss.NewStyle().
+			Margin(1, 2).
+			AlignHorizontal(lipgloss.Center).
+			Background(lipgloss.Color("5"))
+	headerStyle = lipgloss.NewStyle().
+			Margin(1, 2).
+			AlignHorizontal(lipgloss.Center).
+			Foreground(lipgloss.Color("5"))
+	errorTextStyle = lipgloss.NewStyle().
+			Margin(2, 2).
+			AlignHorizontal(lipgloss.Center).
+			AlignVertical(lipgloss.Center).
+			Foreground(lipgloss.Color("9"))
+		//BorderStyle(lipgloss.RoundedBorder()).
+		//BorderForeground(lipgloss.Color("62"))
+	//
+	//PaddingRight(2)
+	//	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
+	//	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
+	paginationStyle = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle       = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	quitTextStyle   = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
 type item struct {
@@ -30,7 +46,7 @@ func (i item) FilterValue() string { return string(i.title + i.snippet) }
 func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.snippet }
 
-/*
+/* if we want to control how each item is represented in the list, use this starter
 type itemDelegate struct{}
 
 func (d itemDelegate) Height() int                             { return 1 }
@@ -56,11 +72,12 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 */
 
 type Model struct {
-	list     list.Model
-	choice   string
-	quitting bool
-	width    uint
-	height   uint
+	list       list.Model
+	choice     string
+	rawContent string
+	quitting   bool
+	width      uint
+	height     uint
 
 	viewport viewport.Model
 }
@@ -88,30 +105,15 @@ func (m Model) renderContent() string {
 		return ""
 	}
 
-	dat, err := docs.Docs.ReadFile(m.choice)
-	if err != nil {
-		return quitTextStyle.Render(err.Error())
-	}
-
-	//	quitTextStyle.Render(fmt.Sprintf("❱ %s (%d bytes)\n\n", m.choice, len(dat)) + string(dat) + "\n")
-
-	// We need to adjust the width of the glamour render from our main width
-	// to account for a few things:
-	//
-	//  * The viewport border width
-	//  * The viewport padding
-	//  * The viewport margins
-	//  * The gutter glamour applies to the left side of the content
-	//
 	renderer, err := m.getRenderer()
 
 	if err != nil {
-		return quitTextStyle.Render(err.Error())
+		return errorTextStyle.Render(err.Error())
 	}
 
-	str, err := renderer.Render(string(dat))
+	str, err := renderer.Render(m.rawContent)
 	if err != nil {
-		return quitTextStyle.Render(err.Error())
+		return errorTextStyle.Render(err.Error())
 	}
 
 	return str
@@ -130,6 +132,20 @@ func (m *Model) updateWindowSize(msg tea.WindowSizeMsg) {
 	}
 }
 
+func (m *Model) loadSelection(path string) error {
+	m.choice = path
+
+	dat, err := docs.Docs.ReadFile(m.choice)
+	if err != nil {
+		return err
+	}
+
+	m.rawContent = string(dat)
+	m.viewport.SetContent(m.renderContent())
+
+	return nil
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -141,16 +157,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateWindowSize(msg)
 
 	case tea.KeyMsg:
-		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
+			// Don't match any of the keys below if we're actively filtering in the list
 			break
 		}
+
+		//if m.choice != "" {
+		// if the pager is visible, do not propagate events to other components
+		//break
+		//}
 
 		switch keypress := msg.String(); keypress {
 
 		case "esc":
 			if m.choice != "" {
 				m.choice = ""
+				// do not propagate event down to pager, to avoid exiting
+				return m, nil
 			}
 
 		case "ctrl+f":
@@ -165,24 +188,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if i, ok := m.list.SelectedItem().(item); ok {
-				m.choice = i.title
+				m.loadSelection(i.title)
 			}
-
-			m.viewport.SetContent(m.renderContent())
-
-		default:
-			//if m.list.ShowFilter() {
-			//	m.filter += strings.ToLower(msg.String())
-			//	m.list.SetFilterText(m.filter)
-			//}
 
 		}
 	}
 
-	m.list, cmd = m.list.Update(msg)
-	cmds = append(cmds, cmd)
 	if m.choice != "" {
 		m.viewport, cmd = m.viewport.Update(msg)
+		cmds = append(cmds, cmd)
+	} else {
+		m.list, cmd = m.list.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -191,8 +207,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	if m.choice != "" {
-
-		return fmt.Sprintf("\n > %s\n\n", m.choice) + m.viewport.View()
+		pct := fmt.Sprintf("%.0f%%", (float32(m.viewport.YOffset+m.viewport.VisibleLineCount())/float32(m.viewport.TotalLineCount()))*100.0)
+		ln := fmt.Sprintf("ln:%d:%d:%d", m.viewport.YOffset, m.viewport.YOffset+m.viewport.VisibleLineCount(), m.viewport.TotalLineCount())
+		return headerStyle.Render(fmt.Sprintf("> %s (%s %s)", m.choice, pct, ln)) + "\n" + m.viewport.View()
 	}
 
 	if m.quitting {
@@ -202,9 +219,12 @@ func (m Model) View() string {
 	return "\n" + m.list.View()
 }
 
-func NewModel(width uint) Model {
+func NewModel(width uint, height uint) Model {
 	if width == 0 {
 		width = 78
+	}
+	if height == 0 {
+		height = 20
 	}
 
 	items := []list.Item{}
@@ -230,10 +250,8 @@ func NewModel(width uint) Model {
 		return nil
 	})
 
-	// TODO: can we fzf through contents from this view?
-
-	l := list.New(items, list.NewDefaultDelegate(), int(width), 0)
-	l.Title = "Embedded Documentation Browser"
+	l := list.New(items, list.NewDefaultDelegate(), int(width), int(height))
+	l.Title = "Multiband Embedded Documentation Browser"
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
@@ -241,15 +259,17 @@ func NewModel(width uint) Model {
 	l.Styles.HelpStyle = helpStyle
 
 	l.SetWidth(int(width))
+	l.SetHeight(int(height))
 
-	vp := viewport.New(int(width), 20)
-	vp.Style = lipgloss.NewStyle() //.
+	vp := viewport.New(int(width), int(height-(uint(headerStyle.GetHeight()))))
+	vp.Style = lipgloss.NewStyle()
 	//BorderStyle(lipgloss.RoundedBorder()).
 	//BorderForeground(lipgloss.Color("62")).
 	//PaddingRight(2)
 
 	return Model{
 		width:    width,
+		height:   height,
 		viewport: vp,
 		list:     l,
 	}
