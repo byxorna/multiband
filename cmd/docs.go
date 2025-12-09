@@ -7,19 +7,9 @@ import (
 
 	"codeberg.org/splitringresonator/multiband/docs"
 	docs_cli "codeberg.org/splitringresonator/multiband/pkg/cli/docs"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-)
-
-var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 )
 
 var docsCmd = &cobra.Command{
@@ -69,7 +59,7 @@ var docsCmd = &cobra.Command{
 			width = 80
 		}
 
-		p := tea.NewProgram(docs_cli.NewModel(width, items))
+		p := tea.NewProgram(docs_cli.NewModel(width))
 
 		if _, err := p.Run(); err != nil {
 			return err
