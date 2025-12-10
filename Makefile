@@ -1,10 +1,10 @@
 BINARY := multiband
 MODULE := codeberg.org/splitringresonator/multiband
-BUILDER := podman
+CONTAINER_BUILD_TOOL ?= buildah
 
 COMMIT = $(shell git rev-parse HEAD)
 BUILD = $(shell git describe --tags --always --dirty=\*)
-LDFLAGS := -ldflags="-X=${MODULE}/internal/version.Build=${BUILD} -X=${MODULE}/internal/version.Commit=${COMMIT}"
+LDFLAGS := -ldflags="-X=${MODULE}/internal/version.Build=${BUILD} -X=${MODULE}/internal/version.Commit=${COMMIT} -X=${MODULE}/internal/version.RawBuildTimestamp=$(shell date +%s)"
 GO_BUILD_ARGS := ${LDFLAGS} -buildvcs=true
 
 
@@ -23,7 +23,7 @@ bin:
 
 .PHONY: container
 container:
-	$(BUILDER) build -f Containerfile -t $(BINARY):latest
+	$(CONTAINER_BUILD_TOOL) build -f Containerfile -t $(BINARY):latest
 
 .PHONY: clean
 clean:

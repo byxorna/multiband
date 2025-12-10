@@ -319,7 +319,7 @@ func NewModel(width uint, height uint) Model {
 	})
 
 	l := list.New(items, list.NewDefaultDelegate(), int(width), int(height))
-	l.Title = fmt.Sprintf("Multiband Embedded Documentation Browser %s", version.Build)
+	l.Title = fmt.Sprintf("Multiband Embedded Documentation Browser %s, compiled %s", version.Build, version.BuiltAt().Format("2006-01-02T15:04:05Z"))
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
