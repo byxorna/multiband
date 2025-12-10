@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"codeberg.org/splitringresonator/multiband/docs"
+	"codeberg.org/splitringresonator/multiband/internal/version"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,16 +36,65 @@ var (
 	//	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
 	paginationStyle = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	helpStyle       = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle   = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+)
+
+type Origin uint8
+
+const (
+	OriginDefault Origin = iota
+	OriginEmbedded
+	OriginRemote
 )
 
 type item struct {
-	title, snippet string
+	title                      string
+	origin                     Origin
+	content, snippet, revision *string
+
+	err error
 }
 
-func (i item) FilterValue() string { return string(i.title + i.snippet) }
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.snippet }
+func (i item) FilterValue() string {
+	if i.content != nil {
+		return i.title + *i.content
+	}
+
+	if i.snippet != nil {
+		return i.title + *i.snippet
+	}
+
+	return i.title
+}
+
+func (i item) Description() string {
+	if i.err != nil {
+		return i.err.Error()
+	}
+	if i.snippet != nil {
+		return *i.snippet
+	}
+	return ""
+}
+
+func (i item) Title() string {
+	trinkets := []string{}
+
+	/*
+		switch origin := i.origin; origin {
+		case OriginEmbedded:
+			trinkets = append(trinkets, "λ")
+
+		case OriginRemote:
+			trinkets = append(trinkets, "remote")
+		}
+	*/
+
+	if len(trinkets) > 0 {
+		return fmt.Sprintf("%s (%s)", i.title, strings.Join(trinkets, " "))
+	} else {
+		return i.title
+	}
+}
 
 /* if we want to control how each item is represented in the list, use this starter
 type itemDelegate struct{}
@@ -72,13 +122,14 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 */
 
 type Model struct {
-	list       list.Model
 	choice     string
+	history    []string
 	rawContent string
 	quitting   bool
 	width      uint
 	height     uint
 
+	list     list.Model
 	viewport viewport.Model
 }
 
@@ -134,13 +185,9 @@ func (m *Model) updateWindowSize(msg tea.WindowSizeMsg) {
 
 func (m *Model) loadSelection(path string) error {
 	m.choice = path
+	m.history = append(m.history, m.choice)
 
-	dat, err := docs.Docs.ReadFile(m.choice)
-	if err != nil {
-		return err
-	}
-
-	m.rawContent = string(dat)
+	m.rawContent = string(*m.list.SelectedItem().(item).content)
 	m.viewport.SetContent(m.renderContent())
 
 	return nil
@@ -187,8 +234,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, tea.Quit)
 
 		case "enter":
-			if i, ok := m.list.SelectedItem().(item); ok {
-				m.loadSelection(i.title)
+			if m.choice == "" {
+				if i, ok := m.list.SelectedItem().(item); ok {
+					m.loadSelection(i.title)
+				}
 			}
 
 		}
@@ -209,11 +258,11 @@ func (m Model) View() string {
 	if m.choice != "" {
 		pct := fmt.Sprintf("%.0f%%", (float32(m.viewport.YOffset+m.viewport.VisibleLineCount())/float32(m.viewport.TotalLineCount()))*100.0)
 		ln := fmt.Sprintf("ln:%d:%d:%d", m.viewport.YOffset, m.viewport.YOffset+m.viewport.VisibleLineCount(), m.viewport.TotalLineCount())
-		return headerStyle.Render(fmt.Sprintf("> %s (%s %s)", m.choice, pct, ln)) + "\n" + m.viewport.View()
+		return headerStyle.Render(fmt.Sprintf("> %s@%s (%s %s)", m.choice, version.Build, pct, ln)) + "\n" + m.viewport.View()
 	}
 
 	if m.quitting {
-		return quitTextStyle.Render("Ta!")
+		return strings.Join(m.history, "\n")
 	}
 
 	return "\n" + m.list.View()
@@ -245,13 +294,32 @@ func NewModel(width uint, height uint) Model {
 				return nil
 			}
 
-			items = append(items, item{title: path, snippet: "todo snippet"})
+			dat, err := docs.Docs.ReadFile(path)
+			var content, snippet string
+			if dat != nil {
+				content = string(dat)
+				snipLength := 60
+				if len(content) < snipLength {
+					snippet = content
+				} else {
+					snippet = strings.ReplaceAll(content, "\n", " ")[:snipLength] + "..."
+				}
+			}
+
+			items = append(items, item{
+				title:    path,
+				revision: &version.Build,
+				origin:   OriginEmbedded,
+				snippet:  &snippet,
+				content:  &content,
+				err:      err,
+			})
 		}
 		return nil
 	})
 
 	l := list.New(items, list.NewDefaultDelegate(), int(width), int(height))
-	l.Title = "Multiband Embedded Documentation Browser"
+	l.Title = fmt.Sprintf("Multiband Embedded Documentation Browser %s", version.Build)
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
@@ -272,5 +340,6 @@ func NewModel(width uint, height uint) Model {
 		height:   height,
 		viewport: vp,
 		list:     l,
+		history:  []string{},
 	}
 }
