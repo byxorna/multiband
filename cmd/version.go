@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -35,11 +36,26 @@ var (
 var versionCmd = &cobra.Command{
 	Use: "version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("(((| Multiband |)))\n")
-		fmt.Printf("Compiled: %s\nCommit: %s\n", version.BuiltAt().Format("2006-01-02T15:04:05Z"), version.Commit)
+		bundle := struct {
+			Title                  string `json:"title"`
+			Program                string `json:"program"`
+			Compiled               string `json:"compiled_iso8601"`
+			Commit                 string `json:"commit"`
+			*debug.BuildInfo       `json:"build_info"`
+			Architecture           string   `json:"architecture"`
+			Runtime                string   `json:"runtime"`
+			NoteworthyDependencies []string `json:"noteworthy_dependencies"`
+		}{
+			Title:        "(((| Multiband |)))",
+			Program:      os.Args[0],
+			Compiled:     version.BuiltAt().Format("2006-01-02T15:04:05Z"),
+			Commit:       version.Commit,
+			Architecture: runtime.GOARCH,
+			Runtime:      runtime.Version(),
+		}
 
 		if bi, ok := debug.ReadBuildInfo(); ok {
-			fmt.Printf("Package: %s\nVersion: %s\nChecksum: %s\nRuntime: %s\nArchitecture: %s\n", bi.Path, bi.Main.Version, bi.Main.Sum, bi.GoVersion, runtime.GOARCH)
+			bundle.BuildInfo = bi
 			deps := []string{}
 			for _, d := range bi.Deps {
 				if slices.Contains(noteworthyDependencies, d.Path) {
@@ -51,25 +67,36 @@ var versionCmd = &cobra.Command{
 					deps = append(deps, x)
 				}
 			}
-			if len(deps) > 0 {
-				fmt.Printf("Dependencies:\n  %s\n", strings.Join(deps, "\n  "))
-			}
+			bundle.NoteworthyDependencies = deps
 		} else {
 			fmt.Fprintf(os.Stderr, "unable to read debug build info\n")
 		}
+
+		switch outFormat, _ := cmd.Flags().GetString("output"); outFormat {
+		case "json":
+			out, err := json.Marshal(bundle)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %s\n", err.Error())
+				os.Exit(1)
+			}
+			fmt.Print(string(out))
+		default:
+
+			fmt.Printf("Program: %s\n", bundle.Program)
+			fmt.Printf("Compiled: %s\nCommit: %s\n", bundle.Compiled, bundle.Commit)
+			if bundle.BuildInfo != nil {
+				bi := bundle.BuildInfo
+				fmt.Printf("Package: %s\nVersion: %s\nChecksum: %s\nRuntime: %s\nArchitecture: %s\n", bi.Path, bi.Main.Version, bi.Main.Sum, bi.GoVersion, runtime.GOARCH)
+			}
+
+			if len(bundle.NoteworthyDependencies) > 0 {
+				fmt.Printf("Dependencies:\n  %s\n", strings.Join(bundle.NoteworthyDependencies, "\n  "))
+			}
+		}
+
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// versionCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// versionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
