@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"io/fs"
+	"net/http"
 	"os"
 	"strings"
 
@@ -11,6 +13,29 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
+
+var docsServeCmd = &cobra.Command{
+	Use:   "serve",
+	Short: "Serve embedded docs over HTTP",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		host := "127.0.0.1"
+		port, err := cmd.Flags().GetInt("port")
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(os.Stderr, "Documentation served at http://%s:%d/\nctrl-c to exit\n", host, port)
+
+		httpfs := http.FileServer(http.FS(docs.Docs)) // TODO: render markdown to html
+		return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), httpfs)
+	},
+}
+
+func init() {
+	// Local flag: only applies to `serve`.
+	docsServeCmd.Flags().Int("port", 8080, "port to listen on")
+	docsCmd.AddCommand(docsServeCmd)
+}
 
 var docsCmd = &cobra.Command{
 	Use:   "docs",
