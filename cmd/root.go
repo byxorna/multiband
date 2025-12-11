@@ -39,6 +39,13 @@ func Execute(docsFS embed.FS) {
 }
 
 func init() {
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "docs",
+		Title: "Documentation",
+	}, &cobra.Group{
+		ID:    "tools",
+		Title: "Tools",
+	})
 	rootCmd.AddCommand(docsCmd)
 	rootCmd.AddCommand(tuiCmd)
 	rootCmd.PersistentFlags().StringP("output", "o", "", "Output format")

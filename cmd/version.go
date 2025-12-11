@@ -34,7 +34,8 @@ var (
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
-	Use: "version",
+	Use:   "version",
+	Short: "Show version information",
 	Run: func(cmd *cobra.Command, args []string) {
 		bundle := struct {
 			Title                  string `json:"title"`

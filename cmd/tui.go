@@ -12,9 +12,10 @@ import (
 )
 
 var tuiCmd = &cobra.Command{
-	Use:   "tui",
-	Short: "Surf the waves in style",
-	Args:  cobra.NoArgs,
+	Use:     "tui",
+	GroupID: "tools",
+	Short:   "Surf the waves in style",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var opts []tea.ProgramOption
 

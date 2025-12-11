@@ -15,8 +15,9 @@ import (
 )
 
 var docsServeCmd = &cobra.Command{
-	Use:   "serve",
-	Short: "Serve embedded docs over HTTP",
+	Use:     "serve",
+	GroupID: "docs",
+	Short:   "Serve embedded docs over HTTP",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host := "127.0.0.1"
 		port, err := cmd.Flags().GetInt("port")
@@ -33,14 +34,19 @@ var docsServeCmd = &cobra.Command{
 
 func init() {
 	// Local flag: only applies to `serve`.
+	docsCmd.AddGroup(&cobra.Group{
+		ID:    "docs",
+		Title: "Documentation",
+	})
 	docsServeCmd.Flags().Int("port", 8080, "port to listen on")
 	docsCmd.AddCommand(docsServeCmd)
 }
 
 var docsCmd = &cobra.Command{
-	Use:   "docs",
-	Short: "View built-in documentation",
-	Args:  cobra.NoArgs,
+	Use:     "docs",
+	GroupID: "docs",
+	Short:   "View built-in documentation",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		items := []string{}
