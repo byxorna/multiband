@@ -17,9 +17,17 @@ help:
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
 .PHONY: bin
-bin:
+bin: docs
 	go build ${GO_BUILD_ARGS} -o bin/${BINARY} ${MODULE}
 	# ./bin/${BINARY} -h
+
+.PHONY: docs
+docs:
+	go build ${GO_BUILD_ARGS} -o bin/${BINARY} ${MODULE}
+	go run ./internal/tools/docgen -out ./docs/cli -format markdown # -frontmatter
+	#go run ./internal/tools/docgen -out ./content/reference -format markdown -frontmatter
+	go run ./internal/tools/docgen -out ./man -format man
+	#go run ./internal/tools/docgen -out ./docs/rest -format rest
 
 .PHONY: container
 container:

@@ -34,3 +34,7 @@ go.work.sum
 
 # generated openapi stuff
 *.gen.go
+
+# generated documentation
+/docs/cli/
+/man/

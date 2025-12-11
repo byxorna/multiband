@@ -27,6 +27,10 @@ var rootCmd = &cobra.Command{
 	Short: "Experimental communications platform",
 }
 
+func Root() *cobra.Command {
+	return rootCmd
+}
+
 func Execute(docsFS embed.FS) {
 	err := rootCmd.Execute()
 	if err != nil {
