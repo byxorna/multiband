@@ -32,16 +32,6 @@ var docsServeCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	// Local flag: only applies to `serve`.
-	docsCmd.AddGroup(&cobra.Group{
-		ID:    "docs",
-		Title: "Documentation",
-	})
-	docsServeCmd.Flags().Int("port", 8080, "port to listen on")
-	docsCmd.AddCommand(docsServeCmd)
-}
-
 var docsCmd = &cobra.Command{
 	Use:     "docs",
 	GroupID: "docs",
@@ -100,4 +90,14 @@ var docsCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func init() {
+	// Local flag: only applies to `serve`.
+	docsCmd.AddGroup(&cobra.Group{
+		ID:    "docs",
+		Title: "Documentation",
+	})
+	docsServeCmd.Flags().Int("port", 8080, "port to listen on")
+	docsCmd.AddCommand(docsServeCmd)
 }

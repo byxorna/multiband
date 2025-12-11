@@ -28,8 +28,13 @@ var (
 			AlignHorizontal(lipgloss.Center).
 			AlignVertical(lipgloss.Center).
 			Foreground(lipgloss.Color("9"))
-		//BorderStyle(lipgloss.RoundedBorder()).
-		//BorderForeground(lipgloss.Color("62"))
+	infoStyle = func() lipgloss.Style {
+		b := lipgloss.RoundedBorder()
+		b.Left = "┤"
+		return titleStyle.BorderStyle(b)
+	}()
+	//BorderStyle(lipgloss.RoundedBorder()).
+	//BorderForeground(lipgloss.Color("62"))
 	//
 	//PaddingRight(2)
 	//	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
@@ -122,6 +127,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 */
 
 type Model struct {
+	initalized bool // whether we have everything we need to render the app
 	choice     string
 	history    []string
 	rawContent string
@@ -193,6 +199,18 @@ func (m *Model) loadSelection(path string) error {
 	return nil
 }
 
+func (m *Model) headerView() string {
+	title := titleStyle.Render("Mr. Pager")
+	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
+	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
+}
+
+func (m *Model) footerView() string {
+	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
+	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
+	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -202,6 +220,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.updateWindowSize(msg)
+
+		// https://github.com/charmbracelet/bubbletea/blob/c2414242/examples/pager/main.go#L52
+		headerHeight := lipgloss.Height(m.headerView())
+		footerHeight := lipgloss.Height(m.footerView())
+		verticalMarginHeight := headerHeight + footerHeight
+
+		if !m.initalized {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+			m.viewport.YPosition = headerHeight
+			m.viewport.SetContent(m.renderContent())
+			m.initalized = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - verticalMarginHeight
+		}
 
 	case tea.KeyMsg:
 		if m.list.FilterState() == list.Filtering {
