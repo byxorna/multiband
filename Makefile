@@ -3,8 +3,8 @@ MODULE := codeberg.org/splitringresonator/multiband
 CONTAINER_BUILD_TOOL ?= buildah
 
 COMMIT = $(shell git rev-parse HEAD)
-BUILD = $(shell git describe --tags --always --dirty=\*)
-LDFLAGS := -ldflags="-X=${MODULE}/internal/version.Build=${BUILD} -X=${MODULE}/internal/version.Commit=${COMMIT} -X=${MODULE}/internal/version.RawBuildTimestamp=$(shell date +%s)"
+SHORT = $(shell git describe --tags --always --dirty=\*)
+LDFLAGS := -ldflags="-X=${MODULE}/internal/version.Short=${SHORT} -X=${MODULE}/internal/version.Commit=${COMMIT} -X=${MODULE}/internal/version.RawBuildTimestamp=$(shell date +%s)"
 GO_BUILD_ARGS := ${LDFLAGS} -buildvcs=true
 
 

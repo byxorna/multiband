@@ -19,12 +19,15 @@ import (
 	"embed"
 	"os"
 
+	"codeberg.org/splitringresonator/multiband/internal/version"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "multiband",
-	Short: "Experimental communications platform",
+	Use:     "multiband",
+	Short:   "Experimental communications platform",
+	Example: ``, //TODO
+	Version: version.Verbose(),
 }
 
 func Root() *cobra.Command {
@@ -41,13 +44,13 @@ func Execute(docsFS embed.FS) {
 func init() {
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "docs",
-		Title: "Documentation",
+		Title: "Documentation Commands:",
 	}, &cobra.Group{
 		ID:    "tools",
-		Title: "Tools",
+		Title: "Tools:",
 	})
 	rootCmd.AddCommand(docsCmd)
 	rootCmd.AddCommand(tuiCmd)
 	rootCmd.PersistentFlags().StringP("output", "o", "", "Output format")
-	// //rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolP("anon", "A", false, "Generate single use identity for this session")
 }

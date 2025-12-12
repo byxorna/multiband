@@ -21,15 +21,19 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"slices"
 	"strings"
+	"time"
 
 	"codeberg.org/splitringresonator/multiband/internal/version"
 	"github.com/spf13/cobra"
 )
 
 var (
-	noteworthyDependencies = []string{"github.com/Sudo-Ivan/reticulum-go"}
+	noteworthyDependencies = []string{
+		"github.com/Sudo-Ivan/reticulum-go",
+		"github.com/gomarkdown/markdown",
+		"github.com/cockroachdb/pebble",
+	}
 )
 
 // versionCmd represents the version command
@@ -40,16 +44,16 @@ var versionCmd = &cobra.Command{
 		bundle := struct {
 			Title                  string `json:"title"`
 			Program                string `json:"program"`
-			Compiled               string `json:"compiled_iso8601"`
+			BuiltRFC3339           string `json:"built_rfc3339"`
 			Commit                 string `json:"commit"`
 			*debug.BuildInfo       `json:"build_info"`
 			Architecture           string   `json:"architecture"`
 			Runtime                string   `json:"runtime"`
 			NoteworthyDependencies []string `json:"noteworthy_dependencies"`
 		}{
-			Title:        "(((| Multiband |)))",
+			Title:        rootCmd.Short,
 			Program:      os.Args[0],
-			Compiled:     version.BuiltAt().Format("2006-01-02T15:04:05Z"),
+			BuiltRFC3339: version.BuiltAt().Format(time.RFC3339),
 			Commit:       version.Commit,
 			Architecture: runtime.GOARCH,
 			Runtime:      runtime.Version(),
@@ -59,7 +63,14 @@ var versionCmd = &cobra.Command{
 			bundle.BuildInfo = bi
 			deps := []string{}
 			for _, d := range bi.Deps {
-				if slices.Contains(noteworthyDependencies, d.Path) {
+				var ofNote bool
+				for _, dep := range noteworthyDependencies {
+					if strings.HasPrefix(d.Path, dep) {
+						ofNote = true
+						break
+					}
+				}
+				if ofNote {
 					var x string
 					x = fmt.Sprintf("%s@%s", d.Path, d.Version)
 					if d.Replace != nil {
@@ -84,7 +95,7 @@ var versionCmd = &cobra.Command{
 		default:
 
 			fmt.Printf("Program: %s\n", bundle.Program)
-			fmt.Printf("Compiled: %s\nCommit: %s\n", bundle.Compiled, bundle.Commit)
+			fmt.Printf("Built: %s\nCommit: %s\n", bundle.BuiltRFC3339, bundle.Commit)
 			if bundle.BuildInfo != nil {
 				bi := bundle.BuildInfo
 				fmt.Printf("Package: %s\nVersion: %s\nChecksum: %s\nRuntime: %s\nArchitecture: %s\n", bi.Path, bi.Main.Version, bi.Main.Sum, bi.GoVersion, runtime.GOARCH)

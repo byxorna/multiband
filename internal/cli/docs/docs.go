@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
+	"time"
 
 	"codeberg.org/splitringresonator/multiband/docs"
 	"codeberg.org/splitringresonator/multiband/internal/version"
@@ -296,7 +297,7 @@ func (m Model) View() string {
 	if m.choice != "" {
 		pct := fmt.Sprintf("%.0f%%", (float32(m.viewport.YOffset+m.viewport.VisibleLineCount())/float32(m.viewport.TotalLineCount()))*100.0)
 		ln := fmt.Sprintf("ln:%d:%d:%d", m.viewport.YOffset, m.viewport.YOffset+m.viewport.VisibleLineCount(), m.viewport.TotalLineCount())
-		return headerStyle.Render(fmt.Sprintf("> %s@%s (%s %s)", m.choice, version.Build, pct, ln)) + "\n" + m.viewport.View()
+		return headerStyle.Render(fmt.Sprintf("> %s@%s (%s %s)", m.choice, version.Short, pct, ln)) + "\n" + m.viewport.View()
 	}
 
 	if m.quitting {
@@ -346,7 +347,7 @@ func NewModel(width uint, height uint) Model {
 
 			items = append(items, item{
 				title:    path,
-				revision: &version.Build,
+				revision: &version.Short,
 				origin:   OriginEmbedded,
 				snippet:  &snippet,
 				content:  &content,
@@ -357,7 +358,7 @@ func NewModel(width uint, height uint) Model {
 	})
 
 	l := list.New(items, list.NewDefaultDelegate(), int(width), int(height))
-	l.Title = fmt.Sprintf("Multiband Embedded Documentation Browser %s, compiled %s", version.Build, version.BuiltAt().Format("2006-01-02T15:04:05Z"))
+	l.Title = fmt.Sprintf("Multiband Embedded Documentation Browser %s, compiled %s", version.Short, version.BuiltAt().Format(time.RFC3339))
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
